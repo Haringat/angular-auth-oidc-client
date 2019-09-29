@@ -10,7 +10,7 @@ export * from './models/validation-result.enum';
 export * from './modules/auth.module';
 export * from './services/oidc-token-helper.service';
 export * from './services/oidc.security.config.service';
-export * from './services/oidc.security.service';
+export * from './services/oidc.security.service/oidc.security.service';
 export * from './services/oidc.security.storage';
 export * from './services/oidc.security.validation';
 export * from './services/oidc.logger.service';

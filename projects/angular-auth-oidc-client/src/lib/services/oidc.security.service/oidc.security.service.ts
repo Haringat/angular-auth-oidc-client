@@ -1,30 +1,31 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Location } from '@angular/common';
 import { Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, from, Observable, of, Subject, throwError as observableThrowError, timer } from 'rxjs';
 import { catchError, filter, map, race, shareReplay, switchMap, switchMapTo, take, tap } from 'rxjs/operators';
-import { OidcDataService } from '../data-services/oidc-data.service';
-import { OpenIdConfiguration } from '../models/auth.configuration';
-import { AuthWellKnownEndpoints } from '../models/auth.well-known-endpoints';
-import { AuthorizationResult } from '../models/authorization-result';
-import { AuthorizationState } from '../models/authorization-state.enum';
-import { JwtKeys } from '../models/jwtkeys';
-import { ValidateStateResult } from '../models/validate-state-result.model';
-import { ValidationResult } from '../models/validation-result.enum';
-import { ConfigurationProvider } from './auth-configuration.provider';
-import { StateValidationService } from './oidc-security-state-validation.service';
-import { TokenHelperService } from './oidc-token-helper.service';
-import { LoggerService } from './oidc.logger.service';
-import { OidcSecurityCheckSession } from './oidc.security.check-session';
-import { OidcSecurityCommon } from './oidc.security.common';
-import { OidcSecuritySilentRenew } from './oidc.security.silent-renew';
-import { OidcSecurityUserService } from './oidc.security.user-service';
-import { OidcSecurityValidation } from './oidc.security.validation';
-import { UriEncoder } from './uri-encoder';
-import { UrlParserService } from './url-parser.service';
+import { OidcDataService } from '../../data-services/oidc-data.service';
+import { OpenIdConfiguration } from '../../models/auth.configuration';
+import { AuthWellKnownEndpoints } from '../../models/auth.well-known-endpoints';
+import { AuthorizationResult } from '../../models/authorization-result';
+import { AuthorizationState } from '../../models/authorization-state.enum';
+import { JwtKeys } from '../../models/jwtkeys';
+import { ValidateStateResult } from '../../models/validate-state-result.model';
+import { ValidationResult } from '../../models/validation-result.enum';
+import { ConfigurationProvider } from '../auth-configuration.provider';
+import { StateValidationService } from '../oidc-security-state-validation.service';
+import { TokenHelperService } from '../oidc-token-helper.service';
+import { LoggerService } from '../oidc.logger.service';
+import { OidcSecurityCheckSession } from '../oidc.security.check-session';
+import { OidcSecurityCommon } from '../oidc.security.common';
+import { OidcSecuritySilentRenew } from '../oidc.security.silent-renew';
+import { OidcSecurityUserService } from '../oidc.security.user-service';
+import { OidcSecurityValidation } from '../oidc.security.validation';
+import { UriEncoder } from '../uri-encoder';
+import { UrlParserService } from '../url-parser.service/url-parser.service';
 
 @Injectable()
-export class OidcSecurityService {
+export abstract class OidcSecurityService {
     private _onModuleSetup = new Subject<boolean>();
     private _onCheckSessionChanged = new Subject<boolean>();
     private _onAuthorizationResult = new Subject<AuthorizationResult>();
@@ -74,6 +75,7 @@ export class OidcSecurityService {
         private readonly httpClient: HttpClient,
         private readonly configurationProvider: ConfigurationProvider,
         private readonly urlParserService: UrlParserService,
+        private readonly location: Location
     ) {
         this.onModuleSetup.pipe(take(1)).subscribe(() => {
             this.moduleSetup = true;
@@ -454,7 +456,7 @@ export class OidcSecurityService {
         this.loggerService.logDebug('BEGIN authorizedCallback, no auth data');
         this.resetAuthorizationData(isRenewProcess);
 
-        hash = hash || window.location.hash.substr(1);
+        hash = hash || this.platformLocation.hash.substr(1);
 
         const result: any = hash.split('&').reduce(function (resultData: any, item: string) {
             const parts = item.split('=');
@@ -477,7 +479,7 @@ export class OidcSecurityService {
     }
 
     private redirectTo(url: string) {
-        window.location.href = url;
+        this.location.href = url;
     }
 
     // Implicit Flow
@@ -486,7 +488,7 @@ export class OidcSecurityService {
 
         if (!this.configurationProvider.openIDConfiguration.history_cleanup_off && !isRenewProcess) {
             // reset the history to remove the tokens
-            window.history.replaceState({}, window.document.title, window.location.origin + window.location.pathname);
+            window.history.replaceState({}, window.document.title, this.location.origin + this.location.path(false));
         } else {
             this.loggerService.logDebug('history clean up inactive');
         }
@@ -564,7 +566,11 @@ export class OidcSecurityService {
                     } else {
                         // something went wrong
                         this.loggerService.logWarning('authorizedCallback, token(s) validation failed, resetting');
-                        this.loggerService.logWarning(window.location.hash);
+                        if (typeof window !== 'undefined') {
+                            this.loggerService.logWarning(window.location.hash);
+                        } else {
+
+                        }
                         this.resetAuthorizationData(false);
                         this.oidcSecurityCommon.silentRenewRunning = '';
 

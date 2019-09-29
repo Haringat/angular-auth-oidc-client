@@ -9,7 +9,7 @@ import { AuthModule } from '../../lib/modules/auth.module';
 import { ConfigurationProvider } from '../../lib/services/auth-configuration.provider';
 import { IFrameService } from '../../lib/services/existing-iframe.service';
 import { LoggerService } from '../../lib/services/oidc.logger.service';
-import { OidcSecurityService } from '../../lib/services/oidc.security.service';
+import { OidcSecurityService } from '../../lib/services/oidc.security.service/oidc.security.service';
 import { OidcSecurityStorage } from '../../lib/services/oidc.security.storage';
 import { TestLogging } from '../common/test-logging.service';
 import { TestStorage } from '../common/test-storage.service';
